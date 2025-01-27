@@ -22,7 +22,14 @@ namespace BaldiTVAnnouncer
 		public AnimatedSpriteRotator renderer;
 
 		[SerializeField]
-		public AudioManager audMan;
+		internal AudioManager audMan;
+
+		public AudioManager AudMan { get => audMan; set
+			{
+				audMan = value;
+				audioSource = audMan.audioDevice;
+			}
+		}
 
 		[SerializeField]
 		public float bufferTime = 0.1f;

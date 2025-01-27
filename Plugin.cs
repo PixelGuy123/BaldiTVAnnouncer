@@ -36,6 +36,7 @@ namespace BaldiTVAnnouncer
 			h.PatchAll();
 
 			modPath = AssetLoader.GetModPath(this);
+			AssetLoader.LoadLocalizationFolder(Path.Combine(modPath, "Language", "English"), Language.English);
 
 			GeneratorManagement.Register(this, GenerationModType.Addend, (_, __, sco) =>
 			{
@@ -78,6 +79,9 @@ namespace BaldiTVAnnouncer
 					light = placeholderLight
 				};
 
+				foreach (var tv in GenericExtensions.FindResourceObjects<BaldiTV>())
+					tv.gameObject.AddComponent<BaldiTVExtraData>();
+
 				// Get Baldi sprites
 				const int rows = 24, columns = 4, sprsPerArray = 8;
 
@@ -118,8 +122,23 @@ namespace BaldiTVAnnouncer
 					animator.usesAnimationCurve = true;
 					animator.sprites = targetSpriteSheet;
 					animator.bufferTime = volAnim.bufferTime;
-					animator.volumeMultipler = 1.35f;
 				}
+
+				Baldi_GoToRoom.audGoToEvent = [
+					ObjectCreators.CreateSoundObject(AssetLoader.AudioClipFromFile(Path.Combine(modPath, "BAL_Hurry_1.wav")), "BAL_Announcer_HurryUp_1", SoundType.Voice, Color.green),
+					ObjectCreators.CreateSoundObject(AssetLoader.AudioClipFromFile(Path.Combine(modPath, "BAL_Hurry_2.wav")), "BAL_Announcer_HurryUp_2", SoundType.Voice, Color.green)
+					];
+
+				Baldi_EndSpeaking.audEndEvent = [
+					ObjectCreators.CreateSoundObject(AssetLoader.AudioClipFromFile(Path.Combine(modPath, "BAL_Done_1.wav")), "BAL_Announcer_Done_1", SoundType.Voice, Color.green),
+					ObjectCreators.CreateSoundObject(AssetLoader.AudioClipFromFile(Path.Combine(modPath, "BAL_Done_2.wav")), "BAL_Announcer_Done_2", SoundType.Voice, Color.green),
+					ObjectCreators.CreateSoundObject(AssetLoader.AudioClipFromFile(Path.Combine(modPath, "BAL_Done_3.wav")), "BAL_Announcer_Done_3", SoundType.Voice, Color.green)
+					];
+
+				Baldi_EndSpeaking.audEndEvent_NoTime = [
+					ObjectCreators.CreateSoundObject(AssetLoader.AudioClipFromFile(Path.Combine(modPath, "BAL_HurryDone_1.wav")), "BAL_Announcer_HurryDone_1", SoundType.Voice, Color.green),
+					ObjectCreators.CreateSoundObject(AssetLoader.AudioClipFromFile(Path.Combine(modPath, "BAL_HurryDone_2.wav")), "BAL_Announcer_HurryDone_2", SoundType.Voice, Color.green)
+					];
 
 			}, false);
 			
