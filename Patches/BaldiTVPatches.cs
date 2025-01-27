@@ -34,8 +34,11 @@ namespace BaldiTVAnnouncer.Patches
 		[HarmonyPrefix]
 		static void CheckIfBaldiIsFree(List<IEnumerator> ___queuedEnumerators, bool ___busy)
 		{
+			if (!Singleton<BaseGameManager>.Instance)
+				return;
+
 			var baldi = Singleton<BaseGameManager>.Instance.Ec.GetBaldi();
-			if (true || !baldi || baldi.behaviorStateMachine.CurrentState is not Baldi_Announcer)
+			if (!baldi || baldi.behaviorStateMachine.CurrentState is not Baldi_Announcer)
 				return;
 
 			if (___queuedEnumerators.Count != 0 && !___busy)
@@ -44,7 +47,7 @@ namespace BaldiTVAnnouncer.Patches
 				{
 					if (!___queuedEnumerators.Exists(x => x.GetType() == baldiSpeakType))
 					{
-						baldi.behaviorStateMachine.ChangeState(speaker.previousState);
+						baldi.behaviorStateMachine.ChangeState(new Baldi_EndSpeaking(baldi, baldi, speaker.previousState, speaker.EventAnnouncement, speaker.reachedInTime, speaker.ogOffset));
 						return;
 					}
 
@@ -52,8 +55,18 @@ namespace BaldiTVAnnouncer.Patches
 						speaker.animator.enabled = true;
 					else
 					{
-						speaker.animator.enabled = false;
 						speaker.rotator.targetSprite = idleSprite;
+						speaker.animator.enabled = false;
+					}
+					return;
+				}
+
+				if (baldi.behaviorStateMachine.CurrentState is Baldi_GoToRoom room)
+				{
+					if (___queuedEnumerators[0].GetType() == baldiSpeakType)
+					{
+						baldi.Navigator.Entity.Teleport(room.PosToGo);
+						room.reachedInTime = false;
 					}
 				}
 			}

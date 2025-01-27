@@ -8,6 +8,8 @@ using UnityEngine;
 using MTM101BaldAPI;
 using PixelInternalAPI.Extensions;
 using HarmonyLib;
+using System.Collections.Generic;
+using BaldiTVAnnouncer.Patches;
 
 namespace BaldiTVAnnouncer
 {
@@ -57,22 +59,69 @@ namespace BaldiTVAnnouncer
 
 				// ---- Room Creation ----
 				RegisterRoom("BaldiTVAnnouncerOffice",
-				new(0f, 0.95f, 0f),
+				new(0f, 0.75f, 0f),
 				ObjectCreators.CreateDoorDataObject("BaldiTvAnnouncerOffice", AssetLoader.TextureFromFile(Path.Combine(modPath, "officeOpen.png")), AssetLoader.TextureFromFile(Path.Combine(modPath, "officeClosed.png"))));
 
 				var room = RoomFactory.CreateAssetsFromPath(Path.Combine(modPath, "baldiOffice.cbld"), 0, false, mapBg: AssetLoader.TextureFromFile(Path.Combine(modPath, "MapBG_Baldi.png")))[0];
-
+				var placeholderTex = new WeightedTexture2D[1] { new() { selection = null, weight = 100 } };
+				var placeholderLight = new WeightedTransform[1] { new() { selection = null, weight = 100 } };
 				officeGroup = new()
 				{
-					potentialRooms = [new() { selection = room }],
+					potentialRooms = [new() { selection = room, weight = 100 }],
 					stickToHallChance = 1f,
 					name = "BaldiTvAnnouncerOffice",
 					minRooms = 1,
-					maxRooms = 1
+					maxRooms = 1,
+					ceilingTexture = placeholderTex,
+					floorTexture = placeholderTex,
+					wallTexture = placeholderTex,
+					light = placeholderLight
 				};
-				
-			}, false);
 
+				// Get Baldi sprites
+				const int rows = 24, columns = 4, sprsPerArray = 8;
+
+				var baldSprs = TextureExtensions.LoadSpriteSheet(columns, rows, 27f, modPath, "baldiTvRepresentationSheet_4x24.png");
+				BaldiTVPatches.idleSprite = baldSprs[0];
+				Sprite[] mapsList = new Sprite[sprsPerArray];
+				var maps = new SpriteRotationMap[rows / 2 - 1];
+				int z = 0, y = 0;
+				for (int i = 0; i < baldSprs.Length; i++) // Basically get every rotation map from the huge array
+				{
+					if (mapsList[0] != null && i % sprsPerArray == 0)
+					{
+						maps[z++] = GenericExtensions.CreateRotationMap(sprsPerArray, mapsList);
+						mapsList = new Sprite[sprsPerArray]; // Makes a new reference
+						y = 0;
+					}
+					mapsList[y++] = baldSprs[i];
+				}
+
+				Sprite[] targetSpriteSheet = new Sprite[maps.Length];
+				for (int i = 0; i < maps.Length; i++)
+					targetSpriteSheet[i] = maps[i].spriteSheet[0];
+
+				var volAnim = GenericExtensions.FindResourceObject<CoreGameManager>().hudPref.BaldiTv.GetComponentInChildren<VolumeAnimator>();
+				// Override Baldis
+				foreach (var baldi in GenericExtensions.FindResourceObjects<Baldi>())
+				{
+					var rot = baldi.gameObject.AddComponent<AnimatedSpriteRotator>();
+					rot.spriteMap = maps;
+					rot.renderer = baldi.spriteRenderer[0];
+					rot.targetSprite = baldSprs[0];
+					rot.enabled = false;
+
+					var animator = baldi.gameObject.AddComponent<SpriteVolumeAnimator>();
+					animator.renderer = rot;
+					animator.sensitivity = volAnim.sensitivity;
+					animator.enabled = false;
+					animator.usesAnimationCurve = true;
+					animator.sprites = targetSpriteSheet;
+					animator.bufferTime = volAnim.bufferTime;
+					animator.volumeMultipler = 1.35f;
+				}
+
+			}, false);
 			
         }
 
@@ -99,8 +148,8 @@ namespace BaldiTVAnnouncer
 		{
 			var newAr = new T[ar.Length + 1];
 			newAr[0] = element;
-			for (int i = 1; i < ar.Length; i++)
-				newAr[i] = ar[i];
+			for (int i = 0; i < ar.Length; i++)
+				newAr[i + 1] = ar[i];
 			return newAr;
 		}
 	}

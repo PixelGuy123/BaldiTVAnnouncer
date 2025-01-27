@@ -7,7 +7,9 @@ namespace BaldiTVAnnouncer
 	{
 		public readonly static List<BaldiTVObject> availableTVs = [];
 
-		public Vector3 FrontPosition => transform.position + transform.forward * 2.5f;
+		public Vector3 FrontPosition => transform.position + transform.forward * 5f;
+
+		public Vector3 DirToLookAt => -transform.forward;
 
 		void Start() =>
 			availableTVs.Add(this);
