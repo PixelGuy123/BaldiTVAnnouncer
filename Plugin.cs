@@ -48,7 +48,7 @@ namespace BaldiTVAnnouncer
 
 			LoadingEvents.RegisterOnAssetsLoaded(Info, () =>
 			{
-				var tvCamSprs = TextureExtensions.LoadSpriteSheet(4, 2, 35f, modPath, "baldoTv.png");
+				var tvCamSprs = TextureExtensions.LoadSpriteSheet(4, 2, 55f, modPath, "baldoTv.png");
 
 				var tvCam = ObjectCreationExtensions.CreateSpriteBillboard(tvCamSprs[0]);
 				tvCam.name = "BaldiTVCam";

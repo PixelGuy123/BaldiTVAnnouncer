@@ -41,32 +41,41 @@ namespace BaldiTVAnnouncer.Patches
 			if (!baldi || baldi.behaviorStateMachine.CurrentState is not Baldi_Announcer)
 				return;
 
-			if (___queuedEnumerators.Count != 0 && !___busy)
+			if (___queuedEnumerators.Count != 0)
 			{
 				if (baldi.behaviorStateMachine.CurrentState is Baldi_Speaking speaker)
 				{
-					if (!___queuedEnumerators.Exists(x => x.GetType() == baldiSpeakType))
+					if (!___busy)
 					{
-						baldi.behaviorStateMachine.ChangeState(new Baldi_EndSpeaking(baldi, baldi, speaker.previousState, speaker.EventAnnouncement, speaker.reachedInTime, speaker.ogOffset));
-						return;
+						if (!___queuedEnumerators.Exists(x => x.GetType() == baldiSpeakType))
+						{
+							baldi.behaviorStateMachine.ChangeState(new Baldi_EndSpeaking(baldi, baldi, speaker.previousState, speaker.EventAnnouncement, speaker.reachedInTime, speaker.ogOffset));
+							return;
+						}
 					}
-
-					if (___queuedEnumerators[0].GetType() == baldiSpeakType)
-						speaker.animator.enabled = true;
 					else
 					{
-						speaker.rotator.targetSprite = idleSprite;
-						speaker.animator.enabled = false;
+
+						if (___queuedEnumerators[0].GetType() == baldiSpeakType)
+							speaker.animator.enabled = true;
+						else
+						{
+							speaker.rotator.targetSprite = idleSprite;
+							speaker.animator.enabled = false;
+						}
+						return;
 					}
-					return;
 				}
 
-				if (baldi.behaviorStateMachine.CurrentState is Baldi_GoToRoom room)
+				if (___busy)
 				{
-					if (___queuedEnumerators[0].GetType() == baldiSpeakType)
+					if (baldi.behaviorStateMachine.CurrentState is Baldi_GoToRoom room) // To make sure he doesn't miss it out!
 					{
-						baldi.Navigator.Entity.Teleport(room.PosToGo);
-						room.reachedInTime = false;
+						if (___queuedEnumerators[0].GetType() == baldiSpeakType)
+						{
+							baldi.Navigator.Entity.Teleport(room.PosToGo);
+							room.reachedInTime = false;
+						}
 					}
 				}
 			}
