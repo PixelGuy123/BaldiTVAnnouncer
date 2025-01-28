@@ -8,7 +8,6 @@ using UnityEngine;
 using MTM101BaldAPI;
 using PixelInternalAPI.Extensions;
 using HarmonyLib;
-using System.Collections.Generic;
 using BaldiTVAnnouncer.Patches;
 
 namespace BaldiTVAnnouncer
@@ -18,6 +17,8 @@ namespace BaldiTVAnnouncer
 	[BepInDependency("pixelguy.pixelmodding.baldiplus.pixelinternalapi", BepInDependency.DependencyFlags.HardDependency)]
 	[BepInDependency("mtm101.rulerp.baldiplus.levelloader", BepInDependency.DependencyFlags.HardDependency)]
 	[BepInDependency("pixelguy.pixelmodding.baldiplus.editorcustomrooms", BepInDependency.DependencyFlags.HardDependency)]
+
+	[BepInDependency("mtm101.rulerp.baldiplus.leveleditor", BepInDependency.DependencyFlags.SoftDependency)]
 	public class Plugin : BaseUnityPlugin
     {
 		internal const string guid = "pixelguy.pixelmodding.baldiplus.balditvannouncer", editorGuid = "TvAnnouncer_";
