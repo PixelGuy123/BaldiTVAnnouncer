@@ -9,7 +9,7 @@ namespace BaldiTVAnnouncer.Patches
 		static void Postfix(ref List<VentTravelStatus> ___ventTravelers, EnvironmentController ___ec, ref bool ___cameraInside) // To make sure the announcer is actually announcing!
 		{
 			var baldo = ___ec.GetBaldi();
-			if (!baldo || baldo.behaviorStateMachine.CurrentState is not Baldi_Announcer) return;
+			if (!baldo || baldo.behaviorStateMachine.CurrentState is not Baldi_Speaking) return;
 
 			for (int i = 0; i < ___ventTravelers.Count; i++)
 			{
