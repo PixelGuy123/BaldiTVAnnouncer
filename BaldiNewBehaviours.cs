@@ -102,6 +102,8 @@ namespace BaldiTVAnnouncer
 		{
 			base.Exit();
 			baldi.GetAngry(-angerUsed);
+			baldi.ResetSlapDistance();
+			baldi.EndSlap();
 			baldi.Navigator.Entity.Teleport(positionToGo);
 		}
 
@@ -160,6 +162,8 @@ namespace BaldiTVAnnouncer
 		public override void Enter()
 		{
 			base.Enter();
+			baldi.transform.forward = tvObj.DirToLookAt;
+			baldi.Navigator.Entity.Teleport(tvObj.FrontPosition);
 			animator.volumeMultipler = 1.75f;
 			animator.AudMan = baldi.AudMan;
 
