@@ -34,7 +34,7 @@ namespace BaldiTVAnnouncer
 #pragma warning restore IDE0051 // Remover membros privados não utilizados
 		{
 			Harmony h = new(guid);
-			h.PatchAll();
+			h.PatchAllConditionals();
 
 			modPath = AssetLoader.GetModPath(this);
 			AssetLoader.LoadLocalizationFolder(Path.Combine(modPath, "Language", "English"), Language.English);
