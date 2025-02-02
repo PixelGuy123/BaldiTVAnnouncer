@@ -195,6 +195,7 @@ namespace BaldiTVAnnouncer
 	{
 		const float delayIncrement = 0.05f;
 		float smallSlapDelay = 0f;
+		readonly Cell cellToGo = npc.ec.CellFromPosition(originalPosition);
 		public override void Enter()
 		{
 			base.Enter();
@@ -209,7 +210,16 @@ namespace BaldiTVAnnouncer
 		public override void DestinationEmpty()
 		{
 			base.DestinationEmpty();
-			baldi.behaviorStateMachine.ChangeState(previousState);
+			var myCell = npc.ec.CellFromPosition(baldi.transform.position);
+			if (cellToGo == myCell)
+			{
+				baldi.behaviorStateMachine.ChangeState(previousState);
+				return;
+			}
+			npc.ec.FindPath(myCell, cellToGo, PathType.Nav, out _, out bool success);
+
+			if (!success)
+				baldi.behaviorStateMachine.ChangeState(previousState);
 		}
 
 		public override void Update()

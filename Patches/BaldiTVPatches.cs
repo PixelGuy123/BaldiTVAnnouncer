@@ -8,6 +8,11 @@ namespace BaldiTVAnnouncer.Patches
 	[HarmonyPatch(typeof(BaldiTV))]
 	internal static class BaldiTVPatches
 	{
+		[HarmonyPatch(typeof(EnvironmentController), "GetBaldi")]
+		[HarmonyReversePatch(HarmonyReversePatchType.Original)] // To make sure the other patch doesn't stop this from working
+		static Baldi GetActualBaldi(object instance) =>
+			throw new System.NotImplementedException("stub");
+
 		internal static System.Type baldiSpeakType = AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(BaldiTV), "BaldiSpeaks", [typeof(SoundObject)])).DeclaringType; // Get the compiler generated class
 
 		static bool isAnEvent = false;
@@ -29,7 +34,7 @@ namespace BaldiTVAnnouncer.Patches
 
 			if (enumerator.GetType() == baldiSpeakType)
 			{
-				var baldi = Singleton<BaseGameManager>.Instance.Ec.GetBaldi();
+				var baldi = GetActualBaldi(Singleton<BaseGameManager>.Instance.Ec);
 				if (baldi)
 				{
 					if (baldi.behaviorStateMachine.CurrentState is not Baldi_Announcer || baldi.behaviorStateMachine.CurrentState is Baldi_GoBackToTheSpot)
@@ -46,7 +51,7 @@ namespace BaldiTVAnnouncer.Patches
 			if (!Singleton<BaseGameManager>.Instance || BaldiTVObject.availableTVs.Count == 0)
 				return;
 
-			var baldi = Singleton<BaseGameManager>.Instance.Ec.GetBaldi();
+			var baldi = GetActualBaldi(Singleton<BaseGameManager>.Instance.Ec);
 			if (!baldi)
 				return;
 
