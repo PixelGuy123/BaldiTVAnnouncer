@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Reflection.Emit;
 
 namespace BaldiTVAnnouncer.Patches
 {
@@ -10,7 +11,7 @@ namespace BaldiTVAnnouncer.Patches
 	{
 		[HarmonyPatch(typeof(EnvironmentController), "GetBaldi")]
 		[HarmonyReversePatch(HarmonyReversePatchType.Original)] // To make sure the other patch doesn't stop this from working
-		static Baldi GetActualBaldi(object instance) =>
+		public static Baldi GetActualBaldi(EnvironmentController instance) =>
 			throw new System.NotImplementedException("stub");
 
 		internal static System.Type baldiSpeakType = AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(BaldiTV), "BaldiSpeaks", [typeof(SoundObject)])).DeclaringType; // Get the compiler generated class
@@ -108,5 +109,37 @@ namespace BaldiTVAnnouncer.Patches
 		}
 
 		internal static Sprite idleSprite;
+	}
+
+	[HarmonyPatch]
+	internal static class FixPatches
+	{
+		[HarmonyPatch(typeof(VentController), "Update")]
+		[HarmonyPostfix]
+		static void FixVentWithBaldiIn(ref List<VentTravelStatus> ___ventTravelers, EnvironmentController ___ec, ref bool ___cameraInside) // To make sure the announcer is actually announcing!
+		{
+			var baldo = ___ec.GetBaldi();
+			if (!baldo || baldo.behaviorStateMachine.CurrentState is not Baldi_Speaking) return;
+
+			for (int i = 0; i < ___ventTravelers.Count; i++)
+			{
+				if (___ventTravelers[i].overrider.entity == baldo.Navigator.Entity)
+				{
+					if (___ventTravelers[i].camera)
+						___cameraInside = false;
+
+					___ventTravelers[i].overrider.Release();
+					___ventTravelers.RemoveAt(i--);
+				}
+			}
+		}
+
+		[HarmonyPatch(typeof(TimeOut), "Update")]
+		[HarmonyTranspiler]
+		static IEnumerable<CodeInstruction> FixGetBaldiCall(IEnumerable<CodeInstruction> i) =>
+			new CodeMatcher(i)
+			.MatchForward(false, new CodeMatch(OpCodes.Callvirt, AccessTools.Method(typeof(EnvironmentController), "GetBaldi")))
+			.SetInstruction(CodeInstruction.Call(typeof(BaldiTVPatches), "GetActualBaldi", [typeof(EnvironmentController)])) // Should fix GetBaldi() not working
+			.InstructionEnumeration();
 	}
 }

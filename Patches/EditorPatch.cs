@@ -18,6 +18,10 @@ namespace BaldiTVAnnouncer.Patches
 		private static void MakeEditorSeeAssets(AssetManager man)
 		{
 			MarkObject(man.Get<GameObject>("editorPrefab_BaldiTVCam"), Vector3.up * 5f, false);
+
+			string[] files = Directory.GetFiles(Path.Combine(Plugin.modPath, "EditorUI"));
+			for (int i = 0; i < files.Length; i++)
+				BaldiLevelEditorPlugin.Instance.assetMan.Add("UI/" + Path.GetFileNameWithoutExtension(files[i]), AssetLoader.SpriteFromTexture2D(AssetLoader.TextureFromFile(files[i]), 40f));
 		}
 
 		static void MarkObject(GameObject obj, Vector3 offset, bool useActual = false)
@@ -33,10 +37,6 @@ namespace BaldiTVAnnouncer.Patches
 		[HarmonyPostfix]
 		static void InitializeStuff(PlusLevelEditor __instance)
 		{
-			string[] files = Directory.GetFiles(Path.Combine(Plugin.modPath, "EditorUI"));
-			for (int i = 0; i < files.Length; i++)
-				BaldiLevelEditorPlugin.Instance.assetMan.Add("UI/" + Path.GetFileNameWithoutExtension(files[i]), AssetLoader.SpriteFromTexture2D(AssetLoader.TextureFromFile(files[i]), 40f));
-
 			var objectCats = __instance.toolCats.Find(x => x.name == "objects").tools;
 
 			foreach (var objMark in markersToAdd)
