@@ -57,7 +57,7 @@ namespace BaldiTVAnnouncer
 			}
 
 			angerUsed *= Vector3.Distance(baldi.transform.position, positionToGo) * 0.75f;
-			baldi.GetExtraAnger(angerUsed); // Apparently extra anger is never modified, so it's better I guess
+			baldi.GetAngry(angerUsed);
 			baldi.ClearSoundLocations();
 			tv = BaldiTVObject.availableTVs[Random.Range(0, BaldiTVObject.availableTVs.Count)];
 			positionToGo = tv.FrontPosition;
@@ -100,7 +100,7 @@ namespace BaldiTVAnnouncer
 		public override void Exit()
 		{
 			base.Exit();
-			baldi.GetExtraAnger(-angerUsed);
+			baldi.GetAngry(-angerUsed);
 			baldi.ResetSlapDistance();
 			baldi.EndSlap();
 			baldi.Navigator.Entity.Teleport(positionToGo);

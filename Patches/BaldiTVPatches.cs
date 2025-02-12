@@ -134,6 +134,7 @@ namespace BaldiTVAnnouncer.Patches
 			}
 		}
 
+		[HarmonyPatch(typeof(BaseGameManager), "CollectNotebooks", [typeof(int)])]
 		[HarmonyPatch(typeof(TimeOut), "Update")]
 		[HarmonyTranspiler]
 		static IEnumerable<CodeInstruction> FixGetBaldiCall(IEnumerable<CodeInstruction> i) =>
