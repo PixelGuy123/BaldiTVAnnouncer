@@ -142,5 +142,13 @@ namespace BaldiTVAnnouncer.Patches
 			.MatchForward(false, new CodeMatch(OpCodes.Callvirt, AccessTools.Method(typeof(EnvironmentController), "GetBaldi")))
 			.SetInstruction(CodeInstruction.Call(typeof(BaldiTVPatches), "GetActualBaldi", [typeof(EnvironmentController)])) // Should fix GetBaldi() not working
 			.InstructionEnumeration();
+
+		[HarmonyPatch(typeof(Baldi), "Praise")]
+		[HarmonyPatch(typeof(Baldi), "PraiseAnimation")]
+		[HarmonyPrefix]
+		static bool MakeSureBaldiIsntInterrupted(Baldi __instance) =>
+			__instance.behaviorStateMachine.CurrentState is not Baldi_Announcer;
 	}
+
+	
 }
