@@ -62,7 +62,7 @@ namespace BaldiTVAnnouncer
 			tv = BaldiTVObject.availableTVs[Random.Range(0, BaldiTVObject.availableTVs.Count)];
 			positionToGo = tv.FrontPosition;
 			cellToGo = baldi.ec.CellFromPosition(positionToGo);
-			baldi.Hear(positionToGo, 127, false);
+			baldi.Hear(null, positionToGo, 127, false);
 		}
 
 		public override void DestinationEmpty()
@@ -86,7 +86,7 @@ namespace BaldiTVAnnouncer
 			baldi.UpdateSlapDistance(); // To make sure optimal path!
 			baldi.UpdateSlapDistance();
 			baldi.ClearSoundLocations();
-			baldi.Hear(positionToGo, 127, false);
+			baldi.Hear(null, positionToGo, 127, false);
 
 			smallSlapDelay -= Time.deltaTime * npc.TimeScale;
 			if (smallSlapDelay  <= 0f)
@@ -202,7 +202,7 @@ namespace BaldiTVAnnouncer
 
 			baldi.GetAngry(constantAnger);
 			baldi.ClearSoundLocations();
-			baldi.Hear(ogPosition, 127, false);
+			baldi.Hear(null, ogPosition, 127, false);
 		}
 
 		public override void DestinationEmpty()
@@ -227,7 +227,7 @@ namespace BaldiTVAnnouncer
 			baldi.UpdateSlapDistance(); // To make sure optimal path!
 			baldi.UpdateSlapDistance();
 			baldi.ClearSoundLocations();
-			baldi.Hear(ogPosition, 127, false);
+			baldi.Hear(null, ogPosition, 127, false);
 
 			smallSlapDelay -= Time.deltaTime * npc.TimeScale;
 			if (smallSlapDelay <= 0f)

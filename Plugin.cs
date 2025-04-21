@@ -64,12 +64,16 @@ namespace BaldiTVAnnouncer
 				new(0f, 0.75f, 0f),
 				ObjectCreators.CreateDoorDataObject("BaldiTvAnnouncerOffice", AssetLoader.TextureFromFile(Path.Combine(modPath, "officeOpen.png")), AssetLoader.TextureFromFile(Path.Combine(modPath, "officeClosed.png"))));
 
-				var room = RoomFactory.CreateAssetsFromPath(Path.Combine(modPath, "baldiOffice.cbld"), 0, false, mapBg: AssetLoader.TextureFromFile(Path.Combine(modPath, "MapBG_Baldi.png")))[0];
+				var mapIcon = AssetLoader.TextureFromFile(Path.Combine(modPath, "MapBG_Baldi.png"));
+				var room = RoomFactory.CreateAssetsFromPath(Path.Combine(modPath, "baldiOffice.cbld"), 0, false, mapBg: mapIcon);
+				room.AddRange(RoomFactory.CreateAssetsFromPath(Path.Combine(modPath, "baldiOffice_2.cbld"), 0, false, mapBg: mapIcon));
+
 				var placeholderTex = new WeightedTexture2D[1] { new() { selection = null, weight = 100 } };
 				var placeholderLight = new WeightedTransform[1] { new() { selection = null, weight = 100 } };
+				
 				officeGroup = new()
 				{
-					potentialRooms = [new() { selection = room, weight = 100 }],
+					potentialRooms = [.. room.ConvertAll(x => new WeightedRoomAsset() { selection = x, weight = 100 })],
 					stickToHallChance = 1f,
 					name = "BaldiTvAnnouncerOffice",
 					minRooms = 1,
