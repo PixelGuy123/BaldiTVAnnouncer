@@ -9,10 +9,27 @@ namespace BaldiTVAnnouncer.Patches
 	[HarmonyPatch(typeof(BaldiTV))]
 	internal static class BaldiTVPatches
 	{
-		[HarmonyPatch(typeof(EnvironmentController), "GetBaldi")]
-		[HarmonyReversePatch(HarmonyReversePatchType.Original)] // To make sure the other patch doesn't stop this from working
-		public static Baldi GetActualBaldi(EnvironmentController instance) =>
-			throw new System.NotImplementedException("stub");
+		// Unused since 1.0.4.1
+		// [HarmonyPatch(typeof(EnvironmentController), "GetBaldi")]
+		// [HarmonyReversePatch(HarmonyReversePatchType.Original)]
+		// public static Baldi GetActualBaldi(EnvironmentController instance) =>
+		// 	throw new System.NotImplementedException("stub");
+
+		// this whole patch is included as well
+		// [HarmonyPatch(typeof(BaseGameManager), "CollectNotebooks", [typeof(int)])]
+		// [HarmonyPatch(typeof(TimeOut), "Update")]
+		// [HarmonyTranspiler]
+		// static IEnumerable<CodeInstruction> FixGetBaldiCall(IEnumerable<CodeInstruction> i) =>
+		// 	new CodeMatcher(i)
+		// 	.MatchForward(false, new CodeMatch(OpCodes.Callvirt, AccessTools.Method(typeof(EnvironmentController), "GetBaldi")))
+		// 	.SetInstruction(CodeInstruction.Call(typeof(BaldiTVPatches), "GetActualBaldi", [typeof(EnvironmentController)])) // Should fix GetBaldi() not working
+		// 	.InstructionEnumeration();
+
+		// [HarmonyPatch(typeof(Baldi), "Praise")]
+		// [HarmonyPatch(typeof(Baldi), "PraiseAnimation")]
+		// [HarmonyPrefix]
+		// static bool MakeSureBaldiIsntInterrupted(Baldi __instance) =>
+		// 	__instance.behaviorStateMachine.CurrentState is not Baldi_Announcer;
 
 		internal static System.Type baldiSpeakType = AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(BaldiTV), "BaldiSpeaks", [typeof(SoundObject)])).DeclaringType; // Get the compiler generated class
 
@@ -35,7 +52,7 @@ namespace BaldiTVAnnouncer.Patches
 
 			if (enumerator.GetType() == baldiSpeakType)
 			{
-				var baldi = GetActualBaldi(Singleton<BaseGameManager>.Instance.Ec);
+				var baldi = Singleton<BaseGameManager>.Instance.Ec.GetBaldi();
 				if (baldi)
 				{
 					if (baldi.behaviorStateMachine.CurrentState is not Baldi_Announcer || baldi.behaviorStateMachine.CurrentState is Baldi_GoBackToTheSpot)
@@ -52,7 +69,7 @@ namespace BaldiTVAnnouncer.Patches
 			if (!Singleton<BaseGameManager>.Instance || BaldiTVObject.availableTVs.Count == 0)
 				return;
 
-			var baldi = GetActualBaldi(Singleton<BaseGameManager>.Instance.Ec);
+			var baldi = Singleton<BaseGameManager>.Instance.Ec.GetBaldi();
 			if (!baldi)
 				return;
 
@@ -133,21 +150,6 @@ namespace BaldiTVAnnouncer.Patches
 				}
 			}
 		}
-
-		[HarmonyPatch(typeof(BaseGameManager), "CollectNotebooks", [typeof(int)])]
-		[HarmonyPatch(typeof(TimeOut), "Update")]
-		[HarmonyTranspiler]
-		static IEnumerable<CodeInstruction> FixGetBaldiCall(IEnumerable<CodeInstruction> i) =>
-			new CodeMatcher(i)
-			.MatchForward(false, new CodeMatch(OpCodes.Callvirt, AccessTools.Method(typeof(EnvironmentController), "GetBaldi")))
-			.SetInstruction(CodeInstruction.Call(typeof(BaldiTVPatches), "GetActualBaldi", [typeof(EnvironmentController)])) // Should fix GetBaldi() not working
-			.InstructionEnumeration();
-
-		[HarmonyPatch(typeof(Baldi), "Praise")]
-		[HarmonyPatch(typeof(Baldi), "PraiseAnimation")]
-		[HarmonyPrefix]
-		static bool MakeSureBaldiIsntInterrupted(Baldi __instance) =>
-			__instance.behaviorStateMachine.CurrentState is not Baldi_Announcer;
 	}
 
 	
