@@ -1,18 +1,18 @@
-﻿using BepInEx;
+﻿using System.IO;
+using BaldiTVAnnouncer.Patches;
+using BepInEx;
 using EditorCustomRooms;
+using HarmonyLib;
+using MTM101BaldAPI;
 using MTM101BaldAPI.AssetTools;
 using MTM101BaldAPI.Registers;
-using PlusLevelLoader;
-using System.IO;
-using UnityEngine;
-using MTM101BaldAPI;
 using PixelInternalAPI.Extensions;
-using HarmonyLib;
-using BaldiTVAnnouncer.Patches;
+using PlusLevelLoader;
+using UnityEngine;
 
 namespace BaldiTVAnnouncer
 {
-    [BepInPlugin(guid, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
+	[BepInPlugin(guid, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
 	[BepInDependency("mtm101.rulerp.bbplus.baldidevapi", BepInDependency.DependencyFlags.HardDependency)] // let's not forget this
 	[BepInDependency("pixelguy.pixelmodding.baldiplus.pixelinternalapi", BepInDependency.DependencyFlags.HardDependency)]
 	[BepInDependency("mtm101.rulerp.baldiplus.levelloader", BepInDependency.DependencyFlags.HardDependency)]
@@ -20,7 +20,7 @@ namespace BaldiTVAnnouncer
 
 	[BepInDependency("mtm101.rulerp.baldiplus.leveleditor", BepInDependency.DependencyFlags.SoftDependency)]
 	public class Plugin : BaseUnityPlugin
-    {
+	{
 		internal const string guid = "pixelguy.pixelmodding.baldiplus.balditvannouncer", editorGuid = "TvAnnouncer_";
 
 		readonly AssetManager man = new();
@@ -41,9 +41,8 @@ namespace BaldiTVAnnouncer
 
 			GeneratorManagement.Register(this, GenerationModType.Addend, (_, __, sco) =>
 			{
-				if (sco.levelObject == null)
-					return;
-				sco.levelObject.roomGroup = sco.levelObject.roomGroup.InsertAtStart(officeGroup); // Should have the highest priority regardless
+				foreach (var levelObject in sco.GetCustomLevelObjects())
+					levelObject.roomGroup = levelObject.roomGroup.InsertAtStart(officeGroup); // Should have the highest priority regardless
 			});
 
 			LoadingEvents.RegisterOnAssetsLoaded(Info, () => PostSetup(man), true);
@@ -70,7 +69,7 @@ namespace BaldiTVAnnouncer
 
 				var placeholderTex = new WeightedTexture2D[1] { new() { selection = null, weight = 100 } };
 				var placeholderLight = new WeightedTransform[1] { new() { selection = null, weight = 100 } };
-				
+
 				officeGroup = new()
 				{
 					potentialRooms = [.. room.ConvertAll(x => new WeightedRoomAsset() { selection = x, weight = 100 })],
@@ -146,8 +145,8 @@ namespace BaldiTVAnnouncer
 					];
 
 			}, false);
-			
-        }
+
+		}
 
 		void PostSetup(AssetManager man) { }
 
