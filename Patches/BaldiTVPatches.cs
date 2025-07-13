@@ -1,8 +1,7 @@
-﻿using HarmonyLib;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
+using HarmonyLib;
 using UnityEngine;
-using System.Reflection.Emit;
 
 namespace BaldiTVAnnouncer.Patches
 {
@@ -53,7 +52,7 @@ namespace BaldiTVAnnouncer.Patches
 			if (enumerator.GetType() == baldiSpeakType)
 			{
 				var baldi = Singleton<BaseGameManager>.Instance.Ec.GetBaldi();
-				if (baldi)
+				if (baldi && baldi.Character == Character.Baldi) // Very important character check to not mess up TeacherAPI
 				{
 					if (baldi.behaviorStateMachine.CurrentState is not Baldi_Announcer || baldi.behaviorStateMachine.CurrentState is Baldi_GoBackToTheSpot)
 						baldi.behaviorStateMachine.ChangeState(new Baldi_GoToRoom(baldi, baldi, baldi.behaviorStateMachine.CurrentState, isAnEvent, baldi.transform.position));
@@ -70,7 +69,7 @@ namespace BaldiTVAnnouncer.Patches
 				return;
 
 			var baldi = Singleton<BaseGameManager>.Instance.Ec.GetBaldi();
-			if (!baldi)
+			if (!baldi || baldi.Character != Character.Baldi)
 				return;
 
 			if (baldi.behaviorStateMachine.CurrentState is not Baldi_Announcer)
@@ -79,7 +78,7 @@ namespace BaldiTVAnnouncer.Patches
 					return;
 				baldi.behaviorStateMachine.ChangeState(new Baldi_GoToRoom(baldi, baldi, baldi.behaviorStateMachine.CurrentState, isAnEvent, baldi.transform.position));
 			}
-			
+
 
 			if (___queuedEnumerators.Count != 0)
 			{
@@ -150,7 +149,24 @@ namespace BaldiTVAnnouncer.Patches
 				}
 			}
 		}
+
+		[HarmonyPatch(typeof(Baldi), "Slap")]
+		[HarmonyPrefix]
+		static bool ShouldBaldiReallySlap(Baldi __instance, Baldi.BaldiSlapDelegate ___OnBaldiSlap)
+		{
+			if (__instance.Character != Character.Baldi || __instance.behaviorStateMachine.CurrentState is not Baldi_Announcer)
+				return true;
+
+			// Copy paste of og Slap function
+			___OnBaldiSlap.Invoke(__instance);
+			__instance.slapTotal = 0f;
+			__instance.slapDistance = __instance.nextSlapDistance;
+			__instance.nextSlapDistance = 0f;
+			__instance.navigator.SetSpeed(__instance.slapDistance / (__instance.Delay * __instance.MovementPortion));
+
+			return false;
+		}
 	}
 
-	
+
 }

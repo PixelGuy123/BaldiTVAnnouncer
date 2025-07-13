@@ -45,7 +45,7 @@ namespace BaldiTVAnnouncer
 					levelObject.roomGroup = levelObject.roomGroup.InsertAtStart(officeGroup); // Should have the highest priority regardless
 			});
 
-			LoadingEvents.RegisterOnAssetsLoaded(Info, () => PostSetup(man), true);
+			LoadingEvents.RegisterOnAssetsLoaded(Info, () => PostSetup(man), LoadingEventOrder.Post);
 
 			LoadingEvents.RegisterOnAssetsLoaded(Info, () =>
 			{
@@ -144,7 +144,7 @@ namespace BaldiTVAnnouncer
 					ObjectCreators.CreateSoundObject(AssetLoader.AudioClipFromFile(Path.Combine(modPath, "BAL_HurryDone_2.wav")), "BAL_Announcer_HurryDone_2", SoundType.Voice, Color.green)
 					];
 
-			}, false);
+			}, LoadingEventOrder.Pre);
 
 		}
 
