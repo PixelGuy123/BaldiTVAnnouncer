@@ -1,13 +1,15 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using BaldiTVAnnouncer.Patches;
 using BepInEx;
-using EditorCustomRooms;
+using BepInEx.Bootstrap;
 using HarmonyLib;
 using MTM101BaldAPI;
 using MTM101BaldAPI.AssetTools;
 using MTM101BaldAPI.Registers;
 using PixelInternalAPI.Extensions;
-using PlusLevelLoader;
+using PlusStudioLevelFormat;
+using PlusStudioLevelLoader;
 using UnityEngine;
 
 namespace BaldiTVAnnouncer
@@ -15,13 +17,12 @@ namespace BaldiTVAnnouncer
 	[BepInPlugin(guid, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
 	[BepInDependency("mtm101.rulerp.bbplus.baldidevapi", BepInDependency.DependencyFlags.HardDependency)] // let's not forget this
 	[BepInDependency("pixelguy.pixelmodding.baldiplus.pixelinternalapi", BepInDependency.DependencyFlags.HardDependency)]
-	[BepInDependency("mtm101.rulerp.baldiplus.levelloader", BepInDependency.DependencyFlags.HardDependency)]
-	[BepInDependency("pixelguy.pixelmodding.baldiplus.editorcustomrooms", BepInDependency.DependencyFlags.HardDependency)]
+	[BepInDependency("mtm101.rulerp.baldiplus.levelstudioloader", BepInDependency.DependencyFlags.HardDependency)]
 
-	[BepInDependency("mtm101.rulerp.baldiplus.leveleditor", BepInDependency.DependencyFlags.SoftDependency)]
+	[BepInDependency(studioGUID, BepInDependency.DependencyFlags.SoftDependency)]
 	public class Plugin : BaseUnityPlugin
 	{
-		internal const string guid = "pixelguy.pixelmodding.baldiplus.balditvannouncer", editorGuid = "TvAnnouncer_";
+		internal const string guid = "pixelguy.pixelmodding.baldiplus.balditvannouncer", editorGuid = "TvAnnouncer_", studioGUID = "mtm101.rulerp.baldiplus.levelstudio";
 
 		readonly AssetManager man = new();
 
@@ -42,7 +43,11 @@ namespace BaldiTVAnnouncer
 			GeneratorManagement.Register(this, GenerationModType.Addend, (_, __, sco) =>
 			{
 				foreach (var levelObject in sco.GetCustomLevelObjects())
+				{
+					if (levelObject.IsModifiedByMod(Info)) continue;
 					levelObject.roomGroup = levelObject.roomGroup.InsertAtStart(officeGroup); // Should have the highest priority regardless
+					levelObject.MarkAsModifiedByMod(Info);
+				}
 			});
 
 			LoadingEvents.RegisterOnAssetsLoaded(Info, () => PostSetup(man), LoadingEventOrder.Post);
@@ -64,27 +69,25 @@ namespace BaldiTVAnnouncer
 				ObjectCreators.CreateDoorDataObject("BaldiTvAnnouncerOffice", AssetLoader.TextureFromFile(Path.Combine(modPath, "officeOpen.png")), AssetLoader.TextureFromFile(Path.Combine(modPath, "officeClosed.png"))));
 
 				var mapIcon = AssetLoader.TextureFromFile(Path.Combine(modPath, "MapBG_Baldi.png"));
-				var room = RoomFactory.CreateAssetsFromPath(Path.Combine(modPath, "baldiOffice.cbld"), 0, false, mapBg: mapIcon);
-				room.AddRange(RoomFactory.CreateAssetsFromPath(Path.Combine(modPath, "baldiOffice_2.cbld"), 0, false, mapBg: mapIcon));
+				List<RoomAsset> rooms = [LoadRoom("baldiOffice.rbpl", mapIcon), LoadRoom("baldiOffice_2.rbpl", mapIcon)];
 
 				var placeholderTex = new WeightedTexture2D[1] { new() { selection = null, weight = 100 } };
 				var placeholderLight = new WeightedTransform[1] { new() { selection = null, weight = 100 } };
 
 				officeGroup = new()
 				{
-					potentialRooms = [.. room.ConvertAll(x => new WeightedRoomAsset() { selection = x, weight = 100 })],
+					potentialRooms = [.. rooms.ConvertAll(x => new WeightedRoomAsset() { selection = x, weight = 100 })],
 					stickToHallChance = 1f,
 					name = "BaldiTvAnnouncerOffice",
 					minRooms = 1,
 					maxRooms = 1,
-					ceilingTexture = placeholderTex,
-					floorTexture = placeholderTex,
-					wallTexture = placeholderTex,
+					// new TextureContainer("BlueCarpet", "Wall", "Ceiling")
+					ceilingTexture = [new() { selection = LevelLoaderPlugin.Instance.roomTextureAliases["Ceiling"], weight = 100 }],
+					floorTexture = [new() { selection = LevelLoaderPlugin.Instance.roomTextureAliases["BlueCarpet"], weight = 100 }],
+					wallTexture = [new() { selection = LevelLoaderPlugin.Instance.roomTextureAliases["Wall"], weight = 100 }],
 					light = placeholderLight
 				};
 
-				foreach (var tv in GenericExtensions.FindResourceObjects<BaldiTV>())
-					tv.gameObject.AddComponent<BaldiTVExtraData>();
 
 				// Get Baldi sprites
 				const int rows = 24, columns = 4, sprsPerArray = 8;
@@ -110,23 +113,6 @@ namespace BaldiTVAnnouncer
 					targetSpriteSheet[i] = maps[i].spriteSheet[0];
 
 				var volAnim = GenericExtensions.FindResourceObject<CoreGameManager>().hudPref.BaldiTv.GetComponentInChildren<VolumeAnimator>();
-				// Override Baldis
-				foreach (var baldi in GenericExtensions.FindResourceObjects<Baldi>())
-				{
-					var rot = baldi.gameObject.AddComponent<AnimatedSpriteRotator>();
-					rot.spriteMap = maps;
-					rot.renderer = baldi.spriteRenderer[0];
-					rot.targetSprite = baldSprs[0];
-					rot.enabled = false;
-
-					var animator = baldi.gameObject.AddComponent<SpriteVolumeAnimator>();
-					animator.renderer = rot;
-					animator.sensitivity = volAnim.sensitivity;
-					animator.enabled = false;
-					animator.usesAnimationCurve = true;
-					animator.sprites = targetSpriteSheet;
-					animator.bufferTime = volAnim.bufferTime;
-				}
 
 				Baldi_GoToRoom.audGoToEvent = [
 					ObjectCreators.CreateSoundObject(AssetLoader.AudioClipFromFile(Path.Combine(modPath, "BAL_Hurry_1.wav")), "BAL_Announcer_HurryUp_1", SoundType.Voice, Color.green),
@@ -144,15 +130,34 @@ namespace BaldiTVAnnouncer
 					ObjectCreators.CreateSoundObject(AssetLoader.AudioClipFromFile(Path.Combine(modPath, "BAL_HurryDone_2.wav")), "BAL_Announcer_HurryDone_2", SoundType.Voice, Color.green)
 					];
 
+				var baldiPre = ObjectCreationExtensions.CreateAnimatedSpriteRotator(
+					ObjectCreationExtensions.CreateSpriteBillboard(baldSprs[0]),
+					maps
+				);
+				baldiPre.name = "SpeakerBaldi";
+				baldiPre.targetSprite = baldSprs[0];
+				baldiPre.renderer.name = "BaldiSpeakerSprite";
+				baldiPre.gameObject.ConvertToPrefab(true);
+
+				Baldi_Announcer.talkingBaldiPre = baldiPre.gameObject.AddComponent<SpriteVolumeAnimator>();
+				Baldi_Announcer.talkingBaldiPre.renderer = baldiPre;
+				Baldi_Announcer.talkingBaldiPre.sensitivity = volAnim.sensitivity;
+				Baldi_Announcer.talkingBaldiPre.usesAnimationCurve = true;
+				Baldi_Announcer.talkingBaldiPre.sprites = targetSpriteSheet;
+				Baldi_Announcer.talkingBaldiPre.bufferTime = volAnim.bufferTime;
 			}, LoadingEventOrder.Pre);
 
 		}
 
-		void PostSetup(AssetManager man) { }
+		void PostSetup(AssetManager man)
+		{
+			if (Chainloader.PluginInfos.ContainsKey(studioGUID))
+				EditorPatch.Initialize(man);
+		}
 
 		void AddObjectToEditor(GameObject obj)
 		{
-			PlusLevelLoaderPlugin.Instance.prefabAliases.Add(editorGuid + obj.name, obj);
+			LevelLoaderPlugin.Instance.basicObjects.Add(editorGuid + obj.name, obj);
 			man.Add($"editorPrefab_{obj.name}", obj);
 			obj.ConvertToPrefab(true);
 		}
@@ -160,8 +165,22 @@ namespace BaldiTVAnnouncer
 		RoomSettings RegisterRoom(string roomName, Color color, StandardDoorMats mat)
 		{
 			var settings = new RoomSettings(EnumExtensions.ExtendEnum<RoomCategory>(roomName), RoomType.Room, color, mat);
-			PlusLevelLoaderPlugin.Instance.roomSettings.Add(roomName, settings);
+			LevelLoaderPlugin.Instance.roomSettings.Add(roomName, settings);
 			return settings;
+		}
+
+		RoomAsset LoadRoom(string fileName, Texture2D mapBg)
+		{
+			using BinaryReader reader = new(File.Open(Path.Combine(modPath, fileName), FileMode.Open));
+			var asset = LevelImporter.CreateRoomAsset(BaldiRoomAsset.Read(reader));
+			if (mapBg != null)
+			{
+				asset.mapMaterial = new(asset.mapMaterial);
+				asset.mapMaterial.SetTexture("_MapBackground", mapBg);
+				asset.mapMaterial.SetShaderKeywords(["_KEYMAPSHOWBACKGROUND_ON"]);
+				asset.mapMaterial.name = asset.name;
+			}
+			return asset;
 		}
 	}
 

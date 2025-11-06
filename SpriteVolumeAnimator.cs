@@ -24,14 +24,15 @@ namespace BaldiTVAnnouncer
 		[SerializeField]
 		internal AudioManager audMan;
 
-		public AudioManager AudMan { get => audMan; set
+		public AudioManager AudMan
+		{
+			get => audMan; set
 			{
 				audMan = value;
 				audioSource = audMan.audioDevice;
 			}
 		}
 
-		[SerializeField]
 		public float bufferTime = 0.1f;
 
 		private float[] clipData;
@@ -78,10 +79,10 @@ namespace BaldiTVAnnouncer
 				{
 					if (!usesAnimationCurve)
 						potentialVolume = Mathf.Abs(clipData[i]);
-					
+
 					else
 						potentialVolume = sensitivity.Evaluate(Mathf.Abs(clipData[i]));
-					
+
 
 					if (potentialVolume > volume)
 						volume = potentialVolume;

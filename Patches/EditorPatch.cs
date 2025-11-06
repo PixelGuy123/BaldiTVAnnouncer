@@ -1,56 +1,64 @@
-﻿using BaldiLevelEditor;
+﻿using System.Collections.Generic;
+using System.IO;
 using HarmonyLib;
 using MTM101BaldAPI;
 using MTM101BaldAPI.AssetTools;
-using PlusLevelFormat;
-using System.Collections.Generic;
-using System.IO;
+using PlusLevelStudio;
+using PlusLevelStudio.Editor;
+using PlusLevelStudio.Editor.Tools;
+using PlusStudioLevelFormat;
 using UnityEngine;
 
 namespace BaldiTVAnnouncer.Patches
 {
 	[HarmonyPatch]
-	[ConditionalPatchMod("mtm101.rulerp.baldiplus.leveleditor")]
-	internal class EditorPatch
+	[ConditionalPatchMod(Plugin.studioGUID)]
+	internal static class EditorPatch
 	{
-		[HarmonyPatch(typeof(Plugin), "PostSetup")]
-		[HarmonyPostfix]
-		private static void MakeEditorSeeAssets(AssetManager man)
+		internal static void Initialize(AssetManager man)
 		{
-			MarkObject(man.Get<GameObject>("editorPrefab_BaldiTVCam"), Vector3.up * 5f, false);
-
-			string[] files = Directory.GetFiles(Path.Combine(Plugin.modPath, "EditorUI"));
-			for (int i = 0; i < files.Length; i++)
-				BaldiLevelEditorPlugin.Instance.assetMan.Add("UI/" + Path.GetFileNameWithoutExtension(files[i]), AssetLoader.SpriteFromTexture2D(AssetLoader.TextureFromFile(files[i]), 40f));
+			LoadEditorAssets();
+			InitializeVisuals(man);
+			EditorLevelData.AddDefaultTextureAction(InitializeDefaultTextures);
+			EditorInterfaceModes.AddModeCallback(InitializeTools);
 		}
 
-		static void MarkObject(GameObject obj, Vector3 offset, bool useActual = false)
+		static void LoadEditorAssets()
 		{
-			markersToAdd.Add(Plugin.editorGuid + obj.name);
-			BaldiLevelEditorPlugin.editorObjects.Add(EditorObjectType.CreateFromGameObject<EditorPrefab, PrefabLocation>(Plugin.editorGuid + obj.name, obj, offset, useActual));
+			_editorAssetMan = new AssetManager();
+			string editorUIPath = Path.Combine(Plugin.modPath, "EditorUI");
+
+			// Load all general UI sprites
+			string[] files = Directory.GetFiles(editorUIPath);
+			foreach (string file in files)
+			{
+				string name = Path.GetFileNameWithoutExtension(file);
+				_editorAssetMan.Add("UI/" + name, AssetLoader.SpriteFromTexture2D(AssetLoader.TextureFromFile(file), 40f));
+			}
 		}
 
-		static readonly List<string> markersToAdd = [];
-
-
-		[HarmonyPatch(typeof(PlusLevelEditor), "Initialize")]
-		[HarmonyPostfix]
-		static void InitializeStuff(PlusLevelEditor __instance)
+		static void InitializeVisuals(AssetManager man)
 		{
-			var objectCats = __instance.toolCats.Find(x => x.name == "objects").tools;
-
-			foreach (var objMark in markersToAdd)
-				objectCats.Add(new RotateAndPlacePrefab(objMark));
-
-			__instance.toolCats.Find(x => x.name == "halls").tools.Add(new FloorTool("BaldiTVAnnouncerOffice"));
+			EditorInterface.AddObjectVisualWithCustomSphereCollider(Plugin.editorGuid + "BaldiTVCam", man.Get<GameObject>("editorPrefab_BaldiTVCam"), 1.5f, Vector3.zero);
 		}
 
-		[HarmonyPatch(typeof(EditorLevel), "InitializeDefaultTextures")]
-		[HarmonyPostfix]
-		private static void AddRoomTexs(EditorLevel __instance) =>
-			__instance.defaultTextures.Add("BaldiTVAnnouncerOffice", new TextureContainer("BlueCarpet", "Wall", "Ceiling"));
+		static void InitializeDefaultTextures(Dictionary<string, TextureContainer> containers)
+		{
+			containers.Add("BaldiTVAnnouncerOffice", new TextureContainer("BlueCarpet", "Wall", "Ceiling"));
+		}
 
+		private static void InitializeTools(EditorMode mode, bool isVanillaCompliant)
+		{
+			EditorInterfaceModes.AddToolToCategory(mode, "objects", new ObjectTool(Plugin.editorGuid + "BaldiTVCam", GetSprite("UI/Object_TvAnnouncer_BaldiTVCam", "UI/object_TvAnnouncer_BaldiTVCam"), 5f));
+			EditorInterfaceModes.AddToolToCategory(mode, "rooms", new RoomTool("BaldiTVAnnouncerOffice", GetSprite("UI/Floor_BaldiTVAnnouncerOffice", $"UI/floor_BaldiTVAnnouncerOffice")));
+		}
 
-		
+		private static Sprite GetSprite(string key1, string key2)
+		{
+			var spr = _editorAssetMan.ContainsKey(key1) ? _editorAssetMan.Get<Sprite>(key1) : _editorAssetMan.Get<Sprite>(key2);
+			return spr;
+		}
+
+		private static AssetManager _editorAssetMan;
 	}
 }

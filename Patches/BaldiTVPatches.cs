@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using HarmonyLib;
 using UnityEngine;
 
@@ -31,6 +32,7 @@ namespace BaldiTVAnnouncer.Patches
 		// 	__instance.behaviorStateMachine.CurrentState is not Baldi_Announcer;
 
 		internal static System.Type baldiSpeakType = AccessTools.EnumeratorMoveNext(AccessTools.Method(typeof(BaldiTV), "BaldiSpeaks", [typeof(SoundObject)])).DeclaringType; // Get the compiler generated class
+		internal static FieldInfo baldiSpeakType_Sound = AccessTools.Field(baldiSpeakType, "sound");
 
 		static bool isAnEvent = false;
 
@@ -63,7 +65,7 @@ namespace BaldiTVAnnouncer.Patches
 
 		[HarmonyPatch("Update")]
 		[HarmonyPrefix]
-		static void CheckIfBaldiIsFree(BaldiTV __instance, List<IEnumerator> ___queuedEnumerators, bool ___busy)
+		static void CheckIfBaldiIsFree(List<IEnumerator> ___queuedEnumerators, bool ___busy)
 		{
 			if (!Singleton<BaseGameManager>.Instance || BaldiTVObject.availableTVs.Count == 0)
 				return;
@@ -82,29 +84,14 @@ namespace BaldiTVAnnouncer.Patches
 
 			if (___queuedEnumerators.Count != 0)
 			{
-				if (baldi.behaviorStateMachine.CurrentState is Baldi_EndSpeaking endSpeak && ___queuedEnumerators.Exists(x => x.GetType() == baldiSpeakType))
+				int speakIndex = ___queuedEnumerators.FindIndex(x => x.GetType() == baldiSpeakType);
+				if (baldi.behaviorStateMachine.CurrentState is Baldi_EndSpeaking endSpeak && speakIndex != -1)
 					baldi.behaviorStateMachine.ChangeState(new Baldi_Speaking(baldi, baldi, endSpeak.previousState, endSpeak.EventAnnouncement, endSpeak.tvObj, endSpeak.reachedInTime, endSpeak.ogPosition));
 				else if (baldi.behaviorStateMachine.CurrentState is Baldi_Speaking speaker)
 				{
-					if (!___busy)
+					if (!___busy && speakIndex == -1)
 					{
-						if (!___queuedEnumerators.Exists(x => x.GetType() == baldiSpeakType))
-						{
-							baldi.behaviorStateMachine.ChangeState(new Baldi_EndSpeaking(baldi, baldi, speaker.previousState, speaker.EventAnnouncement, speaker.tvObj, speaker.reachedInTime, speaker.ogOffset, speaker.ogPosition));
-							return;
-						}
-						__instance.GetComponent<BaldiTVExtraData>().lastPlayedEnumerator = ___queuedEnumerators[0].GetType();
-					}
-					else
-					{
-
-						if (__instance.GetComponent<BaldiTVExtraData>().lastPlayedEnumerator == baldiSpeakType)
-							speaker.animator.enabled = true;
-						else
-						{
-							speaker.rotator.targetSprite = idleSprite;
-							speaker.animator.enabled = false;
-						}
+						baldi.behaviorStateMachine.ChangeState(new Baldi_EndSpeaking(baldi, baldi, speaker.talkingBaldi, speaker.previousState, speaker.EventAnnouncement, speaker.tvObj, speaker.reachedInTime, speaker.ogPosition));
 						return;
 					}
 				}

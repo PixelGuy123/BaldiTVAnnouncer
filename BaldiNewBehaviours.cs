@@ -2,25 +2,13 @@
 
 namespace BaldiTVAnnouncer
 {
-	public class Baldi_Announcer(NPC npc, Baldi baldi, NpcState prevState, bool eventAnnouncement, Vector3 originalPosition) : Baldi_SubState(npc, baldi, prevState) 
+	public class Baldi_Announcer(NPC npc, Baldi baldi, NpcState prevState, bool eventAnnouncement, Vector3 originalPosition) : Baldi_SubState(npc, baldi, prevState)
 	{
 		readonly public bool EventAnnouncement = eventAnnouncement;
-		public SpriteVolumeAnimator animator;
-		public AnimatedSpriteRotator rotator;
 		readonly public Vector3 ogPosition = originalPosition;
+		public static SpriteVolumeAnimator talkingBaldiPre;
 
-		public override void Enter()
-		{
-			base.Enter();
-			animator = baldi.GetComponent<SpriteVolumeAnimator>();
-			rotator = baldi.GetComponent<AnimatedSpriteRotator>();
-			if (!animator || !rotator)
-			{
-				baldi.behaviorStateMachine.ChangeState(previousState);
-				return;
-			}
-		}
-		public override void PlayerInSight(PlayerManager player)
+		public override void PlayerInSight(PlayerManager player) // To disable sight detection
 		{
 		}
 	}
@@ -38,8 +26,6 @@ namespace BaldiTVAnnouncer
 		public override void Enter()
 		{
 			base.Enter();
-
-
 			if (BaldiTVObject.availableTVs.Count == 0)
 			{
 				baldi.behaviorStateMachine.ChangeState(previousState);
@@ -89,7 +75,7 @@ namespace BaldiTVAnnouncer
 			baldi.Hear(null, positionToGo, 127, false);
 
 			smallSlapDelay -= Time.deltaTime * npc.TimeScale;
-			if (smallSlapDelay  <= 0f)
+			if (smallSlapDelay <= 0f)
 			{
 				baldi.Slap();
 				ActivateSlapAnimation();
@@ -103,7 +89,7 @@ namespace BaldiTVAnnouncer
 			baldi.GetAngry(-angerUsed);
 			baldi.ResetSlapDistance();
 			baldi.EndSlap();
-			baldi.Navigator.Entity.Teleport(positionToGo);
+			baldi.Entity.Teleport(positionToGo);
 		}
 
 		const float constantAnger = 90f;
@@ -115,56 +101,41 @@ namespace BaldiTVAnnouncer
 	{
 		readonly public BaldiTVObject tvObj = tvObj;
 		readonly public bool reachedInTime = reachedInTime;
-		public float ogOffset;
+		public SpriteVolumeAnimator talkingBaldi;
+		public SoundObject lastSaidSound = null;
+		public bool newSound = false;
 		public override void Enter()
 		{
 			base.Enter();
-			ogOffset = baldi.spriteRenderer[0].transform.localPosition.y;
-			baldi.Navigator.Entity.SetFrozen(true);
-			baldi.Navigator.Entity.SetInteractionState(false);
-			baldi.Navigator.Entity.SetBlinded(true);
-			baldi.spriteRenderer[0].transform.localPosition = Vector3.down * 0.35f;
+			talkingBaldi = Object.Instantiate(talkingBaldiPre);
+			talkingBaldi.transform.forward = tvObj.DirToLookAt;
+			Vector3 spawnPos = tvObj.FrontPosition;
+			spawnPos.y = 4.75f;
+			talkingBaldi.transform.position = spawnPos;
+			talkingBaldi.volumeMultipler = 1.35f;
 
-			baldi.transform.forward = tvObj.DirToLookAt;
-			animator.enabled = true;
-			animator.volumeMultipler = 1.35f;
-			rotator.enabled = true;
-			ChangeNavigationState(new NavigationState_DoNothing(baldi, 0));
-
+			baldi.Entity.SetFrozen(true);
+			baldi.Entity.SetInteractionState(false);
+			baldi.Entity.SetBlinded(true);
+			baldi.Entity.SetVisible(false);
 			baldi.AudMan.FlushQueue(true);
 
-			animator.AudMan = Singleton<CoreGameManager>.Instance.GetHud(0).BaldiTv.baldiTvAudioManager;
-		}
+			ChangeNavigationState(new NavigationState_DoNothing(baldi, 0));
 
-		public override void Update()
-		{
-			base.Update();
-			baldi.transform.forward = tvObj.DirToLookAt;
-			baldi.Navigator.Entity.Teleport(tvObj.FrontPosition);
-		}
-
-		public override void Exit()
-		{
-			base.Exit();
-			
-			baldi.Navigator.Entity.SetFrozen(false);
-			baldi.Navigator.Entity.SetInteractionState(true);
-			baldi.Navigator.Entity.SetBlinded(false);
+			talkingBaldi.AudMan = Singleton<CoreGameManager>.Instance.GetHud(0).BaldiTv.baldiTvAudioManager;
 		}
 	}
 
-	public class Baldi_EndSpeaking(NPC npc, Baldi baldi, NpcState prevState, bool eventAnnouncement, BaldiTVObject tvObj, bool reachedInTime, float ogoffset, Vector3 originalPosition) : Baldi_Announcer(npc, baldi, prevState, eventAnnouncement, originalPosition)
+	public class Baldi_EndSpeaking(NPC npc, Baldi baldi, SpriteVolumeAnimator talkingBaldi, NpcState prevState, bool eventAnnouncement, BaldiTVObject tvObj, bool reachedInTime, Vector3 originalPosition) : Baldi_Announcer(npc, baldi, prevState, eventAnnouncement, originalPosition)
 	{
 		public readonly bool reachedInTime = reachedInTime;
-		readonly float ogoffset = ogoffset;
 		readonly public BaldiTVObject tvObj = tvObj;
+		public SpriteVolumeAnimator talkingBaldi = talkingBaldi;
 		public override void Enter()
 		{
 			base.Enter();
-			baldi.transform.forward = tvObj.DirToLookAt;
-			baldi.Navigator.Entity.Teleport(tvObj.FrontPosition);
-			animator.volumeMultipler = 1.75f;
-			animator.AudMan = baldi.AudMan;
+			talkingBaldi.volumeMultipler = 1.75f;
+			talkingBaldi.AudMan = baldi.AudMan;
 
 			if (EventAnnouncement)
 				baldi.AudMan.QueueRandomAudio(reachedInTime ? audEndEvent : audEndEvent_NoTime);
@@ -173,18 +144,18 @@ namespace BaldiTVAnnouncer
 		public override void Update()
 		{
 			base.Update();
-			baldi.transform.forward = tvObj.DirToLookAt;
-			baldi.Navigator.Entity.Teleport(tvObj.FrontPosition);
-			if (!baldi.AudMan.QueuedAudioIsPlaying)
+			if (!talkingBaldi.AudMan.QueuedAudioIsPlaying)
 				baldi.behaviorStateMachine.ChangeState(new Baldi_GoBackToTheSpot(npc, baldi, previousState, ogPosition));
 		}
 
 		public override void Exit()
 		{
 			base.Exit();
-			animator.enabled = false;
-			rotator.enabled = false;
-			baldi.spriteRenderer[0].transform.localPosition = Vector3.up * ogoffset;
+			Object.Destroy(talkingBaldi.gameObject);
+			baldi.Entity.SetFrozen(false);
+			baldi.Entity.SetInteractionState(true);
+			baldi.Entity.SetBlinded(false);
+			baldi.Entity.SetVisible(true);
 		}
 
 		internal static SoundObject[] audEndEvent, audEndEvent_NoTime;
@@ -199,7 +170,6 @@ namespace BaldiTVAnnouncer
 		{
 			base.Enter();
 			baldi.ResetSlapDistance();
-
 			baldi.GetAngry(constantAnger);
 			baldi.ClearSoundLocations();
 			baldi.Hear(null, ogPosition, 127, false);

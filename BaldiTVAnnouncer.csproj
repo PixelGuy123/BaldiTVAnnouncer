@@ -4,7 +4,7 @@
     <TargetFramework>net46</TargetFramework>
     <AssemblyName>BaldiTVAnnouncer</AssemblyName>
     <Description>Baldi needs to announce the event in real time! This mod is for it.</Description>
-    <Version>1.0.5</Version>
+    <Version>1.1.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
@@ -21,13 +21,10 @@
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.2" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
-  <Reference Include="BaldiLevelEditor">
-    <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\editor\BaldiLevelEditor.dll</HintPath>
+  <Reference Include="PlusLevelStudio">
+    <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\newEditor\PlusLevelStudio.dll</HintPath>
   </Reference>
   <Reference Include="C:\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BALDI_Data\Managed\Assembly-CSharp.dll" Publicize="true" />
-  <Reference Include="EditorCustomRooms">
-      <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\EditorCustomRooms.dll</HintPath>
-    </Reference>
 	<Reference Include="MTM101BaldAPI">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\MTM101BaldAPI.dll</HintPath>
     </Reference>
@@ -37,11 +34,11 @@
 	<Reference Include="PixelInternalAPI">
       <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\PixelInternalAPI.dll</HintPath>
     </Reference>
-	<Reference Include="PlusLevelFormat">
-	  <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\editor\PlusLevelFormat.dll</HintPath>
+	<Reference Include="PlusStudioLevelFormat">
+	  <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\newEditor\PlusStudioLevelFormat.dll</HintPath>
 	</Reference>
-	<Reference Include="PlusLevelLoader">
-	  <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\editor\PlusLevelLoader.dll</HintPath>
+	<Reference Include="PlusStudioLevelLoader">
+	  <HintPath>C:\Program Files (x86)\Steam\steamapps\common\Baldi's Basics Plus\BepInEx\plugins\newEditor\PlusStudioLevelLoader.dll</HintPath>
 	</Reference>
   </ItemGroup>
 
