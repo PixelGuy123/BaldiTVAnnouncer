@@ -19,7 +19,7 @@ namespace BaldiTVAnnouncer.Patches
 		{
 			LoadEditorAssets();
 			InitializeVisuals(man);
-			EditorLevelData.AddDefaultTextureAction(InitializeDefaultTextures);
+			InitializeDefaultTextures(LevelStudioPlugin.Instance.defaultRoomTextures);
 			EditorInterfaceModes.AddModeCallback(InitializeTools);
 		}
 
