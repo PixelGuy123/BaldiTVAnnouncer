@@ -145,12 +145,14 @@ namespace BaldiTVAnnouncer
 		{
 			base.Update();
 			if (!talkingBaldi.AudMan.QueuedAudioIsPlaying)
-				baldi.behaviorStateMachine.ChangeState(new Baldi_GoBackToTheSpot(npc, baldi, previousState, ogPosition));
+				baldi.behaviorStateMachine.ChangeState(new Baldi_GoBackToTheSpot(npc, baldi, talkingBaldi, previousState, ogPosition));
+			Debug.Log($"Is TalkingBaldi still talking? {talkingBaldi.AudMan.QueuedAudioIsPlaying}");
 		}
 
 		public override void Exit()
 		{
 			base.Exit();
+			Debug.Log($"I\'ve exited!");
 			Object.Destroy(talkingBaldi.gameObject);
 			baldi.Entity.SetFrozen(false);
 			baldi.Entity.SetInteractionState(true);
@@ -161,11 +163,12 @@ namespace BaldiTVAnnouncer
 		internal static SoundObject[] audEndEvent, audEndEvent_NoTime;
 	}
 
-	public class Baldi_GoBackToTheSpot(NPC npc, Baldi baldi, NpcState prevState, Vector3 originalPosition) : Baldi_Announcer(npc, baldi, prevState, false, originalPosition)
+	public class Baldi_GoBackToTheSpot(NPC npc, Baldi baldi, SpriteVolumeAnimator talkingBaldi, NpcState prevState, Vector3 originalPosition) : Baldi_Announcer(npc, baldi, prevState, false, originalPosition)
 	{
 		const float delayIncrement = 0.05f;
 		float smallSlapDelay = 0f;
 		readonly Cell cellToGo = npc.ec.CellFromPosition(originalPosition);
+		public SpriteVolumeAnimator talkingBaldi = talkingBaldi;
 		public override void Enter()
 		{
 			base.Enter();
@@ -173,6 +176,9 @@ namespace BaldiTVAnnouncer
 			baldi.GetAngry(constantAnger);
 			baldi.ClearSoundLocations();
 			baldi.Hear(null, ogPosition, 127, false);
+
+			if (talkingBaldi)
+				Object.Destroy(talkingBaldi.gameObject);
 		}
 
 		public override void DestinationEmpty()

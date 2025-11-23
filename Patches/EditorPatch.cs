@@ -39,7 +39,8 @@ namespace BaldiTVAnnouncer.Patches
 
 		static void InitializeVisuals(AssetManager man)
 		{
-			EditorInterface.AddObjectVisualWithCustomSphereCollider(Plugin.editorGuid + "BaldiTVCam", man.Get<GameObject>("editorPrefab_BaldiTVCam"), 1.5f, Vector3.zero);
+			EditorInterface.AddObjectVisualWithCustomSphereCollider(Plugin.editorGuid + "BaldiTVCam", man.Get<GameObject>("editorPrefab_BaldiTVCam"), 1.5f, Vector3.zero)
+				.gameObject.ReplaceAnimatedRotators();
 		}
 
 		static void InitializeDefaultTextures(Dictionary<string, TextureContainer> containers)
